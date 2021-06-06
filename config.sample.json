@@ -1,4 +1,6 @@
 {
-	"destination": "C:\\Guild Wars 2\\bin64\\d3d9.dll",
-	"url": "https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
+	"filename": "d3d9.dll",
+	"destination": "C:\\Program Files\\Guild Wars 2\\bin64\\",
+	"url": "https://www.deltaconnected.com/arcdps/x64/d3d9.dll",
+	"gw2LauncherPath": "C:\\Program Files\\Guild Wars 2\\Gw2Launcher\\"
 }

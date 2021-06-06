@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -25,13 +23,15 @@ func main() {
 		log.Fatal()
 	}
 
-	filepath := cfg.Destination
+	filepath := fmt.Sprintf("%v%v", cfg.Destination, cfg.Filename)
 	yy, mm, dd := time.Now().Date()
+
+	log.Info().Msg(filepath)
 
 	oldFilePath := fmt.Sprintf("%v.%v-%v-%v.old", filepath, yy, mm, dd)
 
-	renameFlag := DoesFileExist(filepath)
-
+	renameFlag := DoesItExist(filepath, false)
+	log.Info().Msgf("%v", renameFlag)
 	if renameFlag {
 		log.Info().Msgf("Old d3d9.dll found, renaming it to %v", oldFilePath)
 		err := os.Rename(filepath, oldFilePath)
@@ -41,14 +41,14 @@ func main() {
 		}
 	}
 
-	err = DownloadFile(cfg.URL, cfg.Destination)
+	err = DownloadFile(cfg.URL, filepath)
 	if err != nil {
-		log.Info().Msg("There was an error when downloading the file...")
-		if DoesFileExist(filepath + ".old") {
+		log.Warn().Msg("There was an error when downloading the file...")
+		if DoesItExist(filepath+".old", false) {
 			log.Info().Msg("Restoring old d3d9.dll file...")
 			os.Rename(oldFilePath, filepath)
 		}
-		if DoesFileExist(filepath + ".tmp") {
+		if DoesItExist(filepath+".tmp", false) {
 			log.Info().Msg("Removing temp file...")
 			os.Remove(filepath + ".tmp")
 		}
@@ -58,13 +58,26 @@ func main() {
 	log.Info().Msg("File downloaded successfully...")
 	os.Rename(filepath+".tmp", filepath)
 	log.Info().Msg("Removing .tmp from filename...")
+	/* -- Gw2Launcher Specific -- */
+
+	if DoesItExist(cfg.Gw2LauncherPath, true) {
+		returnMap := replaceAllFiles(numberOfFolders(cfg.Gw2LauncherPath), filepath, cfg.Gw2LauncherPath, cfg.Filename)
+		if returnMap == nil {
+			log.Error().Msg("Error Occoured when replacing files")
+		}
+	}
 
 }
 
-func DoesFileExist(filepath string) bool {
+func DoesItExist(filepath string, isDir bool) bool {
 
-	if _, err := os.Stat(filepath); err != nil {
-		if os.IsNotExist(err) {
+	if stat, err := os.Stat(filepath); err != nil {
+		if isDir {
+			if stat.IsDir() && os.IsNotExist(err) {
+				return false
+			}
+
+		} else if os.IsNotExist(err) {
 			return false
 		}
 
@@ -74,7 +87,11 @@ func DoesFileExist(filepath string) bool {
 
 func DownloadFile(url string, filepath string) error {
 
+	log := logger.Logger()
+	log.Info().Msg(filepath + ".tmp")
+
 	out, err := os.Create(filepath + ".tmp")
+
 	if err != nil {
 		return err
 	}
@@ -112,5 +129,77 @@ func DownloadFile(url string, filepath string) error {
 [Y] Move downloaded file -> bin64
 [Y] If error delete .tmp, rename .old -> basename
 [X] MD5 Checksum
-[X] Loggerfile
+[Y] Loggerfile
 */
+
+func numberOfFolders(folderPath string) int {
+	log := logger.Logger()
+	files, err := os.ReadDir(folderPath)
+	if err != nil {
+		log.Warn().Msg("[GW2 Launcher]: path not set")
+		log.Warn().Msg("Skipping GW2 Launcher Routines")
+		return 0
+	}
+
+	numberOfFiles := 0
+
+	for i, _ := range files {
+		numberOfFiles += i
+	}
+	log.Info().Msgf("Number of folders: %v", numberOfFiles)
+	return numberOfFiles
+}
+
+func replaceAllFiles(n int, filepath string, gw2LauncherPath string, filename string) *map[int]bool {
+	log := logger.Logger()
+	if n < 1 {
+		return nil
+	}
+
+	returnMap := make(map[int]bool)
+	reader, err := os.Open(filepath)
+	if err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
+
+	var replaceLogMsg []string
+
+	for i := 1; i <= n; i++ {
+		returnMap[i] = CopyFile(i, filepath, gw2LauncherPath, filename)
+		// log.Info().Msgf("%v", returnMap[i])
+		replaceLogMsg = append(replaceLogMsg, fmt.Sprintf("%v: %v", i, returnMap[i]))
+	}
+	err = reader.Close()
+
+	log.Info().Msgf("%v", replaceLogMsg)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return &returnMap
+}
+
+func CopyFile(i int, srcpath string, gw2LauncherPath string, filename string) bool {
+	log := logger.Logger()
+
+	src, err := os.Open(srcpath)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	destpath := fmt.Sprintf("%v/%v/bin64/%v", gw2LauncherPath, i, filename)
+	log.Info().Msgf("Copying file from %v to %v", srcpath, destpath)
+	dest, err := os.Create(destpath)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("")
+		return false
+	}
+	defer dest.Close()
+	defer src.Close()
+	_, err = io.Copy(dest, src)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("")
+		return false
+	}
+	return true
+}

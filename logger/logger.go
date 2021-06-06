@@ -1,12 +1,12 @@
 package logger
 
 import (
-	"fmt"
-
 	"os"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/pkgerrors"
 )
 
 func Logger() *zerolog.Logger {
@@ -15,20 +15,19 @@ func Logger() *zerolog.Logger {
 	if err != nil {
 		log.Error().Err(err).Msg("Error creating file")
 	}
-	fmt.Printf("The log file is allocated at %s\n", logFile.Name())
+	// fmt.Printf("The log file is allocated at %s\n", logFile.Name())
 
 	/* Initalizing Loggers */
 	consoleWriter := zerolog.ConsoleWriter{Out: os.Stderr}
-	fileWriter := zerolog.New(logFile)
+	fileWriter := zerolog.ConsoleWriter{Out: logFile, NoColor: true, TimeFormat: time.RFC1123}
 
 	/* Initializing MultiLogger */
 	multi := zerolog.MultiLevelWriter(consoleWriter, fileWriter)
 
-	logger := zerolog.New(multi).With().Timestamp().Logger()
+	logger := zerolog.New(multi).With().Timestamp().Caller().Logger()
 
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
-
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	/*

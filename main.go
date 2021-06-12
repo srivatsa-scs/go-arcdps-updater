@@ -59,12 +59,17 @@ func main() {
 	os.Rename(filepath+".tmp", filepath)
 	log.Info().Msg("Removing .tmp from filename...")
 	/* -- Gw2Launcher Specific -- */
+	log.Info().Msgf("%v", cfg.EnableGw2Launcher)
+	if cfg.EnableGw2Launcher {
 
-	if DoesItExist(cfg.Gw2LauncherPath, true) {
-		returnMap := replaceAllFiles(numberOfFolders(cfg.Gw2LauncherPath), filepath, cfg.Gw2LauncherPath, cfg.Filename)
-		if returnMap == nil {
-			log.Error().Msg("Error Occoured when replacing files")
+		if DoesItExist(cfg.Gw2LauncherPath, true) {
+			returnMap := replaceAllFiles(numberOfFolders(cfg.Gw2LauncherPath), filepath, cfg.Gw2LauncherPath, cfg.Filename)
+			if returnMap == nil {
+				log.Error().Msg("Error Occoured when replacing files")
+			}
 		}
+	} else {
+		log.Info().Msg("GW2 Launcher Config Disabled or Not Set")
 	}
 
 }
@@ -143,7 +148,7 @@ func numberOfFolders(folderPath string) int {
 
 	numberOfFiles := 0
 
-	for i, _ := range files {
+	for i := range files {
 		numberOfFiles += i
 	}
 	log.Info().Msgf("Number of folders: %v", numberOfFiles)

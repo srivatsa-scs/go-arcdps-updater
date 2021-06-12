@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	Destination     string `json:"destination" db:"destination"`
-	URL             string `json:"url" db:"url"`
-	Filename        string `json:"filename" db:"filename"`
-	Gw2LauncherPath string `json:"gw2LauncherPath" db:"gw2LauncherPath"`
+	Destination       string `json:"destination" db:"destination"`
+	URL               string `json:"url" db:"url"`
+	Filename          string `json:"filename" db:"filename"`
+	Gw2LauncherPath   string `json:"gw2LauncherPath,omitempty" db:"gw2_launcher_path"`
+	EnableGw2Launcher bool   `json:"enableGw2Launcher" db:"enable_gw2_launcher"`
 }
 
 func ReadConfig(filepath string) (*Config, error) {
@@ -30,6 +31,7 @@ func ReadConfig(filepath string) (*Config, error) {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
+	log.Info().Msgf("%v", config)
 
 	return &config, nil
 }

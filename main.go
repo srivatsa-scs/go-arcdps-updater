@@ -11,6 +11,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 func main() {
@@ -24,6 +26,15 @@ func main() {
 		log.Error().Stack().Msg(err.Error())
 		log.Fatal()
 	}
+
+	logLvl, err := zerolog.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	} else {
+		zerolog.SetGlobalLevel(logLvl)
+	}
+
+	log.Info().Msgf("%v", log.Info().Enabled())
 
 	filepath := fmt.Sprintf("%v%v", cfg.Destination, cfg.Filename)
 	yy, mm, dd := time.Now().Date()
@@ -85,7 +96,7 @@ func main() {
 			}
 		}
 	} else {
-		log.Info().Msg("GW2 Launcher Config Disabled or Not Set")
+		log.Warn().Msg("GW2 Launcher Config Disabled or Not Set")
 	}
 
 }
@@ -144,7 +155,7 @@ func GetMd5FromUrl() string {
 	}
 	md5bytes, _ := io.ReadAll(md5Resp.Body)
 	defer md5Resp.Body.Close()
-	log.Info().Msg(string(md5bytes))
+	log.Debug().Msg(string(md5bytes))
 	return string(md5bytes)
 }
 
@@ -160,7 +171,7 @@ func GetMd5DigestOf(filepath string) string {
 	if _, err := io.Copy(h, f); err != nil {
 		log.Error().Err(err)
 	}
-	log.Info().Msgf("%x", h.Sum(nil))
+	log.Debug().Msgf("%x", h.Sum(nil))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 

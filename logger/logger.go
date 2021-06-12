@@ -15,7 +15,6 @@ func Logger() *zerolog.Logger {
 	if err != nil {
 		log.Error().Err(err).Msg("Error creating file")
 	}
-	// fmt.Printf("The log file is allocated at %s\n", logFile.Name())
 
 	/* Initalizing Loggers */
 	consoleWriter := zerolog.ConsoleWriter{Out: os.Stderr}
@@ -30,13 +29,6 @@ func Logger() *zerolog.Logger {
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	/*
-		debug := flag.Bool("debug", false, "sets log level to debug")
-		flag.Parse()
-		if *debug {
-			zerolog.SetGlobalLevel(zerolog.DebugLevel)
-		}
-	*/
 
 	return &logger
 }

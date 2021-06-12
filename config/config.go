@@ -12,6 +12,7 @@ type Config struct {
 	Filename          string `json:"filename" db:"filename"`
 	Gw2LauncherPath   string `json:"gw2LauncherPath,omitempty" db:"gw2_launcher_path"`
 	EnableGw2Launcher bool   `json:"enableGw2Launcher" db:"enable_gw2_launcher"`
+	LogLevel          string `json:"logLevel,omitempty" db:"log_level"`
 }
 
 func ReadConfig(filepath string) (*Config, error) {
@@ -31,7 +32,7 @@ func ReadConfig(filepath string) (*Config, error) {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	log.Info().Msgf("%v", config)
+	log.Debug().Msgf("%v", config)
 
 	return &config, nil
 }

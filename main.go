@@ -4,10 +4,12 @@ import (
 	"arcdps/config"
 	counter "arcdps/helper"
 	"arcdps/logger"
+	"crypto/md5"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -55,11 +57,25 @@ func main() {
 
 		log.Fatal().Msg(err.Error())
 	}
-	log.Info().Msg("File downloaded successfully...")
-	os.Rename(filepath+".tmp", filepath)
-	log.Info().Msg("Removing .tmp from filename...")
+	md1 := GetMd5DigestOf(filepath)
+	md2 := GetMd5FromUrl()
+	log.Info().Msgf("Checking if Md5 is equal: %v", strings.Contains(md2, md1))
+	if !strings.Contains(md2, md1) {
+		if DoesItExist(oldFilePath, false) {
+			log.Info().Msg("Restoring old d3d9.dll file...")
+			os.Rename(oldFilePath, filepath)
+		}
+		if DoesItExist(filepath+".tmp", false) {
+			log.Info().Msg("Removing temp file...")
+			os.Remove(filepath + ".tmp")
+		}
+	} else {
+
+		log.Info().Msg("File downloaded successfully...")
+		os.Rename(filepath+".tmp", filepath)
+		log.Info().Msg("Removing .tmp from filename...")
+	}
 	/* -- Gw2Launcher Specific -- */
-	log.Info().Msgf("%v", cfg.EnableGw2Launcher)
 	if cfg.EnableGw2Launcher {
 
 		if DoesItExist(cfg.Gw2LauncherPath, true) {
@@ -110,32 +126,43 @@ func DownloadFile(url string, filepath string) error {
 	}
 	defer resp.Body.Close()
 
-	/* WIP MD5 check
-	md5Resp, err := http.Get("https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum")
-	h := md5.New()
-	if _, err := io.Copy(h, out); err != nil {
-		return err
-	}
-	*/
-
 	counter := &counter.WriteCounter{}
 	_, err = io.Copy(out, io.TeeReader(resp.Body, counter))
 	fmt.Println()
+
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-/*
-[Y] Read paths from config file (JSON)
-[Y] Download File
-[Y] Rename old file -> temp file
-[Y] Move downloaded file -> bin64
-[Y] If error delete .tmp, rename .old -> basename
-[X] MD5 Checksum
-[Y] Loggerfile
-*/
+func GetMd5FromUrl() string {
+	log := logger.Logger()
+	md5Resp, err := http.Get("https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum")
+	if err != nil {
+		log.Error().Err(err)
+	}
+	md5bytes, _ := io.ReadAll(md5Resp.Body)
+	defer md5Resp.Body.Close()
+	log.Info().Msg(string(md5bytes))
+	return string(md5bytes)
+}
+
+func GetMd5DigestOf(filepath string) string {
+	log := logger.Logger()
+	f, err := os.Open(filepath + ".tmp")
+	if err != nil {
+		log.Error().Err(err)
+	}
+	defer f.Close()
+
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.Error().Err(err)
+	}
+	log.Info().Msgf("%x", h.Sum(nil))
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
 
 func numberOfFolders(folderPath string) int {
 	log := logger.Logger()
@@ -171,7 +198,6 @@ func replaceAllFiles(n int, filepath string, gw2LauncherPath string, filename st
 
 	for i := 1; i <= n; i++ {
 		returnMap[i] = CopyFile(i, filepath, gw2LauncherPath, filename)
-		// log.Info().Msgf("%v", returnMap[i])
 		replaceLogMsg = append(replaceLogMsg, fmt.Sprintf("%v: %v", i, returnMap[i]))
 	}
 	err = reader.Close()

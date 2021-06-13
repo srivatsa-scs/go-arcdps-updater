@@ -34,17 +34,17 @@ func main() {
 		zerolog.SetGlobalLevel(logLvl)
 	}
 
-	log.Info().Msgf("%v", log.Info().Enabled())
+	log.Debug().Msgf("%v", log.Info().Enabled())
 
 	filepath := fmt.Sprintf("%v%v", cfg.Destination, cfg.Filename)
 	yy, mm, dd := time.Now().Date()
 
-	log.Info().Msg(filepath)
+	log.Debug().Msg(filepath)
 
 	oldFilePath := fmt.Sprintf("%v.%v-%v-%v.old", filepath, yy, mm, dd)
 
 	renameFlag := DoesItExist(filepath, false)
-	log.Info().Msgf("%v", renameFlag)
+	log.Debug().Msgf("Rename Flag: %v", renameFlag)
 	if renameFlag {
 		log.Info().Msgf("Old d3d9.dll found, renaming it to %v", oldFilePath)
 		err := os.Rename(filepath, oldFilePath)
@@ -57,34 +57,18 @@ func main() {
 	err = DownloadFile(cfg.URL, filepath)
 	if err != nil {
 		log.Warn().Msg("There was an error when downloading the file...")
-		if DoesItExist(filepath+".old", false) {
-			log.Info().Msg("Restoring old d3d9.dll file...")
-			os.Rename(oldFilePath, filepath)
-		}
-		if DoesItExist(filepath+".tmp", false) {
-			log.Info().Msg("Removing temp file...")
-			os.Remove(filepath + ".tmp")
-		}
-
+		RestoreOldVersionAndRemoveTemp(oldFilePath, filepath)
 		log.Fatal().Msg(err.Error())
 	}
-	md1 := GetMd5DigestOf(filepath)
-	md2 := GetMd5FromUrl()
-	log.Info().Msgf("Checking if Md5 is equal: %v", strings.Contains(md2, md1))
-	if !strings.Contains(md2, md1) {
-		if DoesItExist(oldFilePath, false) {
-			log.Info().Msg("Restoring old d3d9.dll file...")
-			os.Rename(oldFilePath, filepath)
-		}
-		if DoesItExist(filepath+".tmp", false) {
-			log.Info().Msg("Removing temp file...")
-			os.Remove(filepath + ".tmp")
-		}
+	fileDigest := GetMd5DigestOfFile(filepath)
+	urlDigest := GetMd5FromUrl()
+	log.Info().Msgf("Checking if MD5 Digest Matches: %v", strings.Contains(urlDigest, fileDigest))
+	if !strings.Contains(urlDigest, fileDigest) {
+		RestoreOldVersionAndRemoveTemp(oldFilePath, filepath)
 	} else {
-
 		log.Info().Msg("File downloaded successfully...")
 		os.Rename(filepath+".tmp", filepath)
-		log.Info().Msg("Removing .tmp from filename...")
+		log.Debug().Msg("Removing .tmp from filename...")
 	}
 	/* -- Gw2Launcher Specific -- */
 	if cfg.EnableGw2Launcher {
@@ -117,10 +101,23 @@ func DoesItExist(filepath string, isDir bool) bool {
 	return true
 }
 
+func RestoreOldVersionAndRemoveTemp(oldFilePath string, filepath string) {
+	log := logger.Logger()
+	if DoesItExist(oldFilePath, false) {
+		log.Info().Msg("Restoring old d3d9.dll file...")
+		os.Rename(oldFilePath, filepath)
+	}
+	if DoesItExist(filepath+".tmp", false) {
+		log.Info().Msg("Removing temp file...")
+		os.Remove(filepath + ".tmp")
+	}
+
+}
+
 func DownloadFile(url string, filepath string) error {
 
 	log := logger.Logger()
-	log.Info().Msg(filepath + ".tmp")
+	log.Debug().Msg(filepath + ".tmp")
 
 	out, err := os.Create(filepath + ".tmp")
 
@@ -159,7 +156,7 @@ func GetMd5FromUrl() string {
 	return string(md5bytes)
 }
 
-func GetMd5DigestOf(filepath string) string {
+func GetMd5DigestOfFile(filepath string) string {
 	log := logger.Logger()
 	f, err := os.Open(filepath + ".tmp")
 	if err != nil {
@@ -213,7 +210,7 @@ func replaceAllFiles(n int, filepath string, gw2LauncherPath string, filename st
 	}
 	err = reader.Close()
 
-	log.Info().Msgf("%v", replaceLogMsg)
+	log.Debug().Msgf("The following replacements occoured: %v", replaceLogMsg)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -230,7 +227,7 @@ func CopyFile(i int, srcpath string, gw2LauncherPath string, filename string) bo
 	}
 
 	destpath := fmt.Sprintf("%v/%v/bin64/%v", gw2LauncherPath, i, filename)
-	log.Info().Msgf("Copying file from %v to %v", srcpath, destpath)
+	log.Debug().Msgf("Copying file from %v to %v", srcpath, destpath)
 	dest, err := os.Create(destpath)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("")

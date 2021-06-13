@@ -13,7 +13,11 @@ git clone https://github.com/srivatsa-scs/go-arcdps-updater
 
 ```
 $ go run .
+```
+
 or
+
+```
 $ go build .
 ```
 

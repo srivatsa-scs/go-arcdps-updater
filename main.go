@@ -30,11 +30,13 @@ func main() {
 	logLvl, err := zerolog.ParseLevel(cfg.LogLevel)
 	if err != nil {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		log.Warn().Err(err).Msg("")
 	} else {
 		zerolog.SetGlobalLevel(logLvl)
+		log.Info().Msgf("LogLevel: %v", logLvl)
 	}
 
-	log.Debug().Msgf("%v", log.Info().Enabled())
+	log.Info().Msgf("Is Debug Mode Enabled? %v", log.Debug().Enabled())
 
 	filepath := fmt.Sprintf("%v%v", cfg.Destination, cfg.Filename)
 	yy, mm, dd := time.Now().Date()
@@ -42,6 +44,8 @@ func main() {
 	log.Debug().Msg(filepath)
 
 	oldFilePath := fmt.Sprintf("%v.%v-%v-%v.old", filepath, yy, mm, dd)
+
+	log.Debug().Msg(oldFilePath)
 
 	renameFlag := DoesItExist(filepath, false)
 	log.Debug().Msgf("Rename Flag: %v", renameFlag)
@@ -56,7 +60,7 @@ func main() {
 
 	err = DownloadFile(cfg.URL, filepath)
 	if err != nil {
-		log.Warn().Msg("There was an error when downloading the file...")
+		log.Error().Msg("There was an error when downloading the file...")
 		RestoreOldVersionAndRemoveTemp(oldFilePath, filepath)
 		log.Fatal().Msg(err.Error())
 	}
@@ -72,8 +76,9 @@ func main() {
 	}
 	/* -- Gw2Launcher Specific -- */
 	if cfg.EnableGw2Launcher {
-
+		log.Debug().Msg("GW2 Launcher Config Enabled...")
 		if DoesItExist(cfg.Gw2LauncherPath, true) {
+			log.Debug().Msg("GW2 Launcher Folder exists...")
 			returnMap := replaceAllFiles(numberOfFolders(cfg.Gw2LauncherPath), filepath, cfg.Gw2LauncherPath, cfg.Filename)
 			if returnMap == nil {
 				log.Error().Msg("Error Occoured when replacing files")
@@ -116,6 +121,9 @@ func RestoreOldVersionAndRemoveTemp(oldFilePath string, filepath string) {
 
 func DownloadFile(url string, filepath string) error {
 
+	/* Overriding url, just to prevent malicious / stupid use */
+	url = "https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
+
 	log := logger.Logger()
 	log.Debug().Msg(filepath + ".tmp")
 
@@ -125,7 +133,7 @@ func DownloadFile(url string, filepath string) error {
 		return err
 	}
 	defer out.Close()
-	log.Info().Msg("File created with .tmp to file extension...")
+	log.Debug().Msg("File created with .tmp to file extension...")
 
 	log.Info().Msg("Fetching the latest d3d9.dll....")
 	resp, err := http.Get(url)
@@ -181,17 +189,20 @@ func numberOfFolders(folderPath string) int {
 		return 0
 	}
 
-	numberOfFiles := 0
+	numberOfFolders := 0
 
 	for i := range files {
-		numberOfFiles += i
+		numberOfFolders += i
 	}
-	log.Info().Msgf("Number of folders: %v", numberOfFiles)
-	return numberOfFiles
+	log.Info().Msgf("Number of folders: %v", numberOfFolders)
+	return numberOfFolders
 }
 
 func replaceAllFiles(n int, filepath string, gw2LauncherPath string, filename string) *map[int]bool {
 	log := logger.Logger()
+
+	log.Info().Msgf("%v", log.Debug().Enabled())
+	log.Debug().Msgf("replaceAllFiles(%v,%v,%v,%v)", n, filepath, gw2LauncherPath, filename)
 	if n < 1 {
 		return nil
 	}
@@ -226,7 +237,7 @@ func CopyFile(i int, srcpath string, gw2LauncherPath string, filename string) bo
 		fmt.Println(err)
 	}
 
-	destpath := fmt.Sprintf("%v/%v/bin64/%v", gw2LauncherPath, i, filename)
+	destpath := fmt.Sprintf("%v%v/bin64/%v", gw2LauncherPath, i, filename)
 	log.Debug().Msgf("Copying file from %v to %v", srcpath, destpath)
 	dest, err := os.Create(destpath)
 	if err != nil {

@@ -28,7 +28,5 @@ func Logger() *zerolog.Logger {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-
 	return &logger
 }

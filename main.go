@@ -24,7 +24,7 @@ func main() {
 
 	if err != nil {
 		log.Info().Msg("Configuration file not found...")
-		log.Error().Stack().Msg(err.Error())
+		log.Error().Stack().Err(err).Msg("")
 		log.Fatal()
 	}
 
@@ -57,7 +57,7 @@ func main() {
 		err := os.Rename(filepath, oldFilePath)
 		if err != nil {
 			log.Info().Msg("Error renaming the file...not really sure how this can even happen...")
-			log.Fatal().Msg(err.Error())
+			log.Fatal().Stack().Err(err).Msg("")
 		}
 	}
 
@@ -65,7 +65,7 @@ func main() {
 	if err != nil {
 		log.Error().Msg("There was an error when downloading the file...")
 		RestoreOldVersionAndRemoveTemp(oldFilePath, filepath)
-		log.Fatal().Msg(err.Error())
+		log.Fatal().Stack().Err(err).Msg("")
 	}
 	fileDigest := GetMd5DigestOfFile(filepath)
 	urlDigest := GetMd5FromUrl()
@@ -124,8 +124,7 @@ func RestoreOldVersionAndRemoveTemp(oldFilePath string, filepath string) {
 
 func DownloadFile(url string, filepath string) error {
 
-	/* Overriding url, just to prevent malicious / stupid use */
-	url = "https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
+	// url = "https://www.deltaconnected.com/arcdps/x64/d3d9.dll"
 
 	log := logger.Logger()
 	log.Debug().Msg(filepath + ".tmp")
@@ -159,7 +158,7 @@ func GetMd5FromUrl() string {
 	log := logger.Logger()
 	md5Resp, err := http.Get("https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum")
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Stack().Err(err).Msg("")
 	}
 	md5bytes, _ := io.ReadAll(md5Resp.Body)
 	defer md5Resp.Body.Close()
@@ -171,13 +170,13 @@ func GetMd5DigestOfFile(filepath string) string {
 	log := logger.Logger()
 	f, err := os.Open(filepath + ".tmp")
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Stack().Err(err).Msg("")
 	}
 	defer f.Close()
 
 	h := md5.New()
 	if _, err := io.Copy(h, f); err != nil {
-		log.Error().Err(err)
+		log.Error().Stack().Err(err).Msg("")
 	}
 	log.Debug().Msgf("%x", h.Sum(nil))
 	return fmt.Sprintf("%x", h.Sum(nil))
@@ -224,7 +223,7 @@ func replaceAllFiles(n int, filepath string, gw2LauncherPath string, filename st
 
 	log.Debug().Msgf("The following replacements occoured: %v", replaceLogMsg)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Stack().Err(err).Msg("")
 	}
 
 	return &returnMap
@@ -235,7 +234,7 @@ func CopyFile(i int, srcpath string, gw2LauncherPath string, filename string) bo
 
 	src, err := os.Open(srcpath)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Stack().Err(err).Msg("")
 	}
 
 	destpath := fmt.Sprintf("%v%v/bin64/%v", gw2LauncherPath, i, filename)

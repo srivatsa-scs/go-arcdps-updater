@@ -32,7 +32,6 @@ func ReadConfig(filepath string) (*Config, error) {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	log.Debug().Msgf("%v", config)
 
 	return &config, nil
 }

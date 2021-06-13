@@ -21,6 +21,7 @@ func main() {
 
 	log.Info().Msg("Reading configuration file...")
 	cfg, err := config.ReadConfig("config.json")
+
 	if err != nil {
 		log.Info().Msg("Configuration file not found...")
 		log.Error().Stack().Msg(err.Error())
@@ -37,6 +38,8 @@ func main() {
 	}
 
 	log.Info().Msgf("Is Debug Mode Enabled? %v", log.Debug().Enabled())
+
+	log.Debug().Msgf("Configuration: %v", cfg)
 
 	filepath := fmt.Sprintf("%v%v", cfg.Destination, cfg.Filename)
 	yy, mm, dd := time.Now().Date()
@@ -200,8 +203,6 @@ func numberOfFolders(folderPath string) int {
 
 func replaceAllFiles(n int, filepath string, gw2LauncherPath string, filename string) *map[int]bool {
 	log := logger.Logger()
-
-	log.Info().Msgf("%v", log.Debug().Enabled())
 	log.Debug().Msgf("replaceAllFiles(%v,%v,%v,%v)", n, filepath, gw2LauncherPath, filename)
 	if n < 1 {
 		return nil

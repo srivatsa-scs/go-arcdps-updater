@@ -187,22 +187,17 @@ func numberOfFolders(folderPath string) int {
 	files, err := os.ReadDir(folderPath)
 	if err != nil {
 		log.Warn().Msg("[GW2 Launcher]: path not set")
-		log.Warn().Msg("Skipping GW2 Launcher Routines")
+		log.Warn().Msg("[GW2 Launcher]: Skipping GW2 Launcher Routines")
 		return 0
 	}
-
-	numberOfFolders := 0
-
-	for i := range files {
-		numberOfFolders += i
-	}
+	numberOfFolders := len(files)
 	log.Info().Msgf("Number of folders: %v", numberOfFolders)
 	return numberOfFolders
 }
 
 func replaceAllFiles(n int, filepath string, gw2LauncherPath string, filename string) *map[int]bool {
 	log := logger.Logger()
-	log.Debug().Msgf("replaceAllFiles(%v,%v,%v,%v)", n, filepath, gw2LauncherPath, filename)
+	log.Debug().Msgf("[GW2 Launcher] replaceAllFiles(%v,%v,%v,%v)", n, filepath, gw2LauncherPath, filename)
 	if n < 1 {
 		return nil
 	}
@@ -221,7 +216,7 @@ func replaceAllFiles(n int, filepath string, gw2LauncherPath string, filename st
 	}
 	err = reader.Close()
 
-	log.Debug().Msgf("The following replacements occoured: %v", replaceLogMsg)
+	log.Debug().Msgf("[GW2 Launcher] The following replacements occoured: %v", replaceLogMsg)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("")
 	}
@@ -237,7 +232,7 @@ func CopyFile(i int, srcpath string, gw2LauncherPath string, filename string) bo
 		log.Error().Stack().Err(err).Msg("")
 	}
 
-	destpath := fmt.Sprintf("%v%v/bin64/%v", gw2LauncherPath, i, filename)
+	destpath := fmt.Sprintf("%v%v"+string(os.PathSeparator)+"bin64"+string(os.PathSeparator)+"%v", gw2LauncherPath, i, filename)
 	log.Debug().Msgf("Copying file from %v to %v", srcpath, destpath)
 	dest, err := os.Create(destpath)
 	if err != nil {

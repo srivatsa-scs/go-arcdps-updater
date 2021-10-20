@@ -1,8 +1,16 @@
 {
-	"filename": "d3d9.dll",
-	"destination": "C:\\Program Files\\Guild Wars 2\\bin64\\",
+	"dx11": {
+		"filename": "d3d11.dll",
+		"destination": "C:\\Program Files\\Guild Wars 2\\"
+	},
+	"dx9": {
+		"filename": "d3d9.dll",
+		"destination": "C:\\Program Files\\Guild Wars 2\\bin64\\"
+	},
 	"url": "https://www.deltaconnected.com/arcdps/x64/d3d9.dll",
 	"gw2LauncherPath": "C:\\Program Files\\Guild Wars 2\\Gw2Launcher\\",
 	"enableGw2Launcher": false,
-	"logLevel": "info"
+	"logLevel": "info",
+	"enableDx11": true,
+	"retainOldVersion": false
 }

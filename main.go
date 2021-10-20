@@ -41,7 +41,13 @@ func main() {
 
 	log.Debug().Msgf("Configuration: %v", cfg)
 
-	filepath := fmt.Sprintf("%v%v", cfg.Destination, cfg.Filename)
+	filepath := ""
+	if cfg.EnableDx11 {
+		filepath = fmt.Sprintf("%v%v", cfg.Dx11.Destination, cfg.Dx11.FileName)
+	} else {
+		filepath = fmt.Sprintf("../%v%v", cfg.Dx9.Destination, cfg.Dx9.FileName)
+	}
+
 	yy, mm, dd := time.Now().Date()
 
 	log.Debug().Msg(filepath)
@@ -66,6 +72,10 @@ func main() {
 		log.Error().Msg("There was an error when downloading the file...")
 		RestoreOldVersionAndRemoveTemp(oldFilePath, filepath)
 		log.Fatal().Stack().Err(err).Msg("")
+	}
+	if !cfg.RetainOldVersion {
+		log.Info().Msg("Removing previous version")
+		RemoveOldVersion(oldFilePath)
 	}
 	fileDigest := GetMd5DigestOfFile(filepath)
 	urlDigest := GetMd5FromUrl()
@@ -119,7 +129,14 @@ func RestoreOldVersionAndRemoveTemp(oldFilePath string, filepath string) {
 		log.Info().Msg("Removing temp file...")
 		os.Remove(filepath + ".tmp")
 	}
+}
 
+func RemoveOldVersion(oldFilePath string) {
+	log := logger.Logger()
+	if DoesItExist(oldFilePath, false) {
+		log.Info().Msg("Removing old file...")
+		os.Remove(oldFilePath)
+	}
 }
 
 func DownloadFile(url string, filepath string) error {
